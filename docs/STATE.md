@@ -1,6 +1,6 @@
 # Estado Actual del Sistema: vinylx
-**Stack:** Next.js 15 (App Router), React 19, Supabase (PostgreSQL), Tailwind + Radix.
-**Fases Completadas: 1 a la 9.**
+**Stack:** Next.js 15 (App Router), React 19, Supabase (PostgreSQL), Tailwind + Radix + Framer Motion.
+**Fases Completadas: 1 a la 10.**
 
 ## Arquitectura Implementada
 - **Base de Datos & MVCC:** Tablas `profiles`, `albums`, `tracks`, `album_logs`, `listenlists`, `log_likes`, `follows`. Triggers atómicos para `is_pioneer`, `log_count`, `avg_rating`, `likes_count`. Cero `SELECT COUNT(*)`.
@@ -13,11 +13,13 @@
 - **Descubrimiento Mixto:** Tab System (Álbumes/Usuarios) con debounce ILIKE.
 - **Identidad:** Settings con avatar upload (Supabase Storage).
 - **Edge SEO:** `generateMetadata` dinámica con OpenGraph + Twitter Cards.
-- **Toasts:** Sonner con tema OLED en root layout. Error toasts en todas las mutaciones, success toasts en Listenlist y Profile.
-- **Tipado:** `likes_count` + `log_likes` integrados en `Database` type. Cero `any`. Cero type assertions forzadas.
-- **Seguridad HTTP:** HSTS (2 años + preload), X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy.
-- **Repositorio limpio:** 3 archivos de queries muertos eliminados. Bug de tipo en StreamingLinks corregido (`Record<string, string>` vs `OdesliResponse`). Import muerto de `OdesliResponse` en album page eliminado.
-- **README.md:** Manifiesto arquitectónico de grado empresarial con stack, mandatos, estructura, setup y seguridad.
+- **Toasts:** Sonner con tema OLED en root layout.
+- **Seguridad HTTP:** HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy.
+- **Transiciones de Página:** Framer Motion (`LazyMotion` + `domAnimation`) via `template.tsx`. Entrada con opacity + translateY (0.3s easeOut).
+- **Estética OLED Black:** `--background: #000000` (negro verdadero). `--card: #020617` (slate-950). `--border: #141422` (ultra sutil). Glassmorphism en Sidebar y BottomNav (`bg-glass backdrop-blur-md`, `border-white/5`).
+- **Micro-interacciones:** `active:scale-95` en LikeButton, FollowButton, ListenlistButton. `active:scale-[0.97]` en Button base. `hover:scale-105` en portadas de álbumes.
+- **Skeleton Screens:** Loading states en `/feed`, `/explore`, `/trending`, `/listenlist`, `/profile/[username]`, `/album/[mbid]`, `/settings/profile`. Spinner de FeedList reemplazado por LogCardSkeleton.
+- **Tipado estricto:** Cero `any`. `likes_count` + `log_likes` en Database type.
 
 ## Estado
-Artefacto listo para `git push` e integración con Vercel.
+Artefacto de grado producción. Todas las fases core completadas.

@@ -41,7 +41,7 @@ export function LikeButton({
       disabled={isPending}
       aria-label={optimistic.liked ? "Quitar like" : "Dar like"}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-all",
+        "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-all active:scale-95",
         optimistic.liked
           ? "text-red-400"
           : "text-muted/50 hover:text-muted"

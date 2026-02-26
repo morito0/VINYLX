@@ -44,7 +44,7 @@ export function ListenlistButton({
       disabled={isPending}
       aria-label={optimisticSaved ? "Quitar de listenlist" : "Guardar en listenlist"}
       className={cn(
-        "inline-flex h-10 w-10 items-center justify-center rounded-lg transition-all",
+        "inline-flex h-10 w-10 items-center justify-center rounded-lg transition-all active:scale-95",
         optimisticSaved
           ? "bg-accent-orange/15 text-accent-orange"
           : "text-muted hover:bg-border/50 hover:text-foreground"

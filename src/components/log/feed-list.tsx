@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { LogCard } from "./log-card";
+import { LogCardSkeleton } from "./log-card-skeleton";
 import { loadMoreFeedLogs } from "@/lib/actions/feed";
 import type { LogCardData } from "./log-card";
 
@@ -31,21 +32,21 @@ export function FeedList({ initialLogs, initialHasMore }: FeedListProps) {
         ))}
       </div>
 
-      {hasMore && (
+      {isPending && (
+        <div className="space-y-4 pt-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <LogCardSkeleton key={i} />
+          ))}
+        </div>
+      )}
+
+      {hasMore && !isPending && (
         <div className="flex justify-center pt-2">
           <button
             onClick={handleLoadMore}
-            disabled={isPending}
-            className="rounded-lg border border-border px-6 py-2.5 text-sm font-medium text-muted transition-all hover:border-muted/50 hover:text-foreground disabled:opacity-50"
+            className="rounded-lg border border-border px-6 py-2.5 text-sm font-medium text-muted transition-all active:scale-95 hover:border-muted/50 hover:text-foreground"
           >
-            {isPending ? (
-              <span className="flex items-center gap-2">
-                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-muted border-t-accent-orange" />
-                Cargando
-              </span>
-            ) : (
-              "Cargar más reseñas"
-            )}
+            Cargar más reseñas
           </button>
         </div>
       )}

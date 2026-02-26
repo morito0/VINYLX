@@ -25,7 +25,7 @@ export function BottomNav({ username }: BottomNavProps) {
   ];
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-glass backdrop-blur-xl lg:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/5 bg-glass backdrop-blur-md lg:hidden">
       <div className="flex h-16 items-center justify-around px-1">
         {navItems.map((item) => {
           const isActive = pathname.startsWith(item.href);

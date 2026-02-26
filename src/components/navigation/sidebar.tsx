@@ -34,7 +34,7 @@ export function Sidebar({ username }: SidebarProps) {
   ];
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-border bg-glass backdrop-blur-xl lg:flex lg:flex-col">
+    <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-white/5 bg-glass backdrop-blur-md lg:flex lg:flex-col">
       <div className="flex h-16 items-center px-6">
         <Link href="/feed" className="font-mono text-xl font-bold tracking-tighter">
           Vinyl<span className="text-accent-orange">X</span>
@@ -62,7 +62,7 @@ export function Sidebar({ username }: SidebarProps) {
         })}
       </nav>
 
-      <div className="border-t border-border p-3 space-y-1">
+      <div className="border-t border-white/5 p-3 space-y-1">
         {username && (
           <Link
             href="/settings/profile"

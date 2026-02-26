@@ -39,7 +39,7 @@ export function FollowButton({
       onClick={handleClick}
       disabled={isPending}
       className={cn(
-        "inline-flex h-9 items-center gap-2 rounded-lg px-4 text-sm font-medium transition-all",
+        "inline-flex h-9 items-center gap-2 rounded-lg px-4 text-sm font-medium transition-all active:scale-95",
         optimistic.isFollowing
           ? "border border-border bg-transparent text-muted hover:border-red-500/50 hover:text-red-400"
           : "bg-accent-orange text-background hover:opacity-90"
