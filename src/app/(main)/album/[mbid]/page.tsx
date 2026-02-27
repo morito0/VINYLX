@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ensureAlbumInDatabase } from "@/lib/actions/musicbrainz";
@@ -76,7 +77,7 @@ export default async function AlbumPage({ params }: Props) {
 
   if (!result) notFound();
 
-  const { album, tracks } = result;
+  const { album, tracks, artistMbid } = result;
   const user = authResult.data.user;
   const year = album.release_date?.split("-")[0];
 
@@ -103,7 +104,16 @@ export default async function AlbumPage({ params }: Props) {
         />
         <div className="space-y-2 text-center sm:text-left">
           <h1 className="text-3xl font-bold tracking-tight">{album.title}</h1>
-          <p className="text-lg text-muted">{album.artist_name}</p>
+          {artistMbid ? (
+            <Link
+              href={`/artist/${artistMbid}`}
+              className="text-lg text-gray-300 transition-colors hover:text-foreground hover:underline"
+            >
+              {album.artist_name}
+            </Link>
+          ) : (
+            <p className="text-lg text-muted">{album.artist_name}</p>
+          )}
           <div className="flex items-center justify-center gap-3 sm:justify-start">
             {album.log_count > 0 && (
               <>

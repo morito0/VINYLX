@@ -3,6 +3,7 @@
 import {
   searchReleaseGroups,
   getReleaseGroupDetail,
+  getArtistMbidFromReleaseGroup,
 } from "@/lib/musicbrainz/client";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hydrateStreamingLinks } from "@/lib/odesli/hydrate";
@@ -16,9 +17,15 @@ export async function searchAlbumsFromMusicBrainz(
   return searchReleaseGroups(query.trim());
 }
 
+export type AlbumResult = {
+  album: Album;
+  tracks: Track[];
+  artistMbid: string | null;
+};
+
 export async function ensureAlbumInDatabase(
   mbid: string
-): Promise<{ album: Album; tracks: Track[] } | null> {
+): Promise<AlbumResult | null> {
   const supabase = createAdminClient();
 
   const { data: existing } = await supabase
@@ -29,12 +36,15 @@ export async function ensureAlbumInDatabase(
     .returns<Album>();
 
   if (existing) {
-    const { data: tracks } = await supabase
-      .from("tracks")
-      .select("*")
-      .eq("album_id", existing.id)
-      .order("track_number", { ascending: true })
-      .returns<Track[]>();
+    const [{ data: tracks }, artistMbid] = await Promise.all([
+      supabase
+        .from("tracks")
+        .select("*")
+        .eq("album_id", existing.id)
+        .order("track_number", { ascending: true })
+        .returns<Track[]>(),
+      getArtistMbidFromReleaseGroup(mbid),
+    ]);
 
     if (
       !existing.streaming_links ||
@@ -46,7 +56,7 @@ export async function ensureAlbumInDatabase(
       }
     }
 
-    return { album: existing, tracks: tracks ?? [] };
+    return { album: existing, tracks: tracks ?? [], artistMbid };
   }
 
   const detail = await getReleaseGroupDetail(mbid);
@@ -103,5 +113,5 @@ export async function ensureAlbumInDatabase(
 
   hydrateStreamingLinks(album.id, detail.releaseId).catch(() => {});
 
-  return { album, tracks: tracks ?? [] };
+  return { album, tracks: tracks ?? [], artistMbid: detail.artistMbid };
 }

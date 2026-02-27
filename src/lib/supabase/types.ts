@@ -16,6 +16,10 @@ export interface Database {
           display_name: string | null;
           avatar_url: string | null;
           bio: string | null;
+          country: string | null;
+          birth_date: string | null;
+          favorite_genres: string[];
+          onboarding_completed: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -25,6 +29,10 @@ export interface Database {
           display_name?: string | null;
           avatar_url?: string | null;
           bio?: string | null;
+          country?: string | null;
+          birth_date?: string | null;
+          favorite_genres?: string[];
+          onboarding_completed?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -34,6 +42,10 @@ export interface Database {
           display_name?: string | null;
           avatar_url?: string | null;
           bio?: string | null;
+          country?: string | null;
+          birth_date?: string | null;
+          favorite_genres?: string[];
+          onboarding_completed?: boolean;
           updated_at?: string;
         };
         Relationships: [];

@@ -130,3 +130,63 @@ export async function updateProfile(
   revalidatePath("/settings/profile");
   return { error: null, success: true };
 }
+
+const updateDetailsSchema = z.object({
+  country: z.string().min(1, "Selecciona un país"),
+  birth_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida")
+    .nullable(),
+  favorite_genres: z.array(z.string()).max(5, "Máximo 5 géneros").default([]),
+  display_name: z.string().max(50).optional(),
+  bio: z.string().max(500).optional(),
+});
+
+export type UpdateDetailsInput = z.infer<typeof updateDetailsSchema>;
+
+export async function updateProfileDetails(
+  data: UpdateDetailsInput
+): Promise<ProfileFormState> {
+  const parsed = updateDetailsSchema.safeParse(data);
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message, success: false };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { error: "No autenticado", success: false };
+
+  const payload: Database["public"]["Tables"]["profiles"]["Update"] = {
+    country: parsed.data.country,
+    birth_date: parsed.data.birth_date,
+    favorite_genres: parsed.data.favorite_genres,
+  };
+
+  if (parsed.data.display_name !== undefined) {
+    payload.display_name = parsed.data.display_name || null;
+  }
+  if (parsed.data.bio !== undefined) {
+    payload.bio = parsed.data.bio || null;
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update(payload)
+    .eq("id", user.id);
+
+  if (error) return { error: error.message, success: false };
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("username")
+    .eq("id", user.id)
+    .single();
+
+  revalidatePath(`/profile/${profile?.username}`);
+  revalidatePath("/feed");
+  return { error: null, success: true };
+}

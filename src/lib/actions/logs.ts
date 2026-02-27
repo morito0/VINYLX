@@ -8,7 +8,11 @@ import type { Album, Profile } from "@/lib/supabase/helpers";
 
 const createLogSchema = z.object({
   album_id: z.string().uuid(),
-  rating: z.coerce.number().int().min(1).max(10),
+  rating: z.coerce
+    .number()
+    .min(0)
+    .max(10)
+    .transform((v) => Math.round(v * 10) / 10),
   review_text: z.string().max(5000).optional(),
   trinity_tracks: z.array(z.string().uuid()).length(3),
   listened_at: z.string().optional(),

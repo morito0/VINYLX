@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getUserLogs } from "@/lib/queries/feed";
 import { LogCard } from "@/components/log/log-card";
 import { FollowButton } from "@/components/profile/follow-button";
+import { EditProfileModal } from "@/components/profile/edit-profile-modal";
 import type { Profile } from "@/lib/supabase/helpers";
 
 type Props = { params: Promise<{ username: string }> };
@@ -134,12 +135,15 @@ export default async function ProfilePage({ params }: Props) {
               />
             )}
             {isOwnProfile && (
-              <Link
-                href="/settings/profile"
-                className="inline-flex h-9 items-center rounded-lg border border-border px-4 text-sm font-medium text-muted transition-colors hover:border-muted/50 hover:text-foreground"
-              >
-                Editar perfil
-              </Link>
+              <EditProfileModal
+                profile={{
+                  country: profile.country,
+                  birth_date: profile.birth_date,
+                  favorite_genres: profile.favorite_genres,
+                  display_name: profile.display_name,
+                  bio: profile.bio,
+                }}
+              />
             )}
           </div>
           <p className="text-sm text-muted">@{profile.username}</p>

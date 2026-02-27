@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { createLog, type LogState } from "@/lib/actions/logs";
+import { MagneticRatingSlider } from "@/components/log/magnetic-rating-slider";
 import { TrinitySelector } from "@/components/album/trinity-selector";
 import { AlbumCover } from "@/components/album/album-cover";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,7 @@ interface Props {
 export function LogFormWrapper({ album, tracks }: Props) {
   const [state, formAction, isPending] = useActionState(createLog, initialState);
   const [trinity, setTrinity] = useState<string[]>([]);
-  const [rating, setRating] = useState(7);
+  const [rating, setRating] = useState(7.0);
 
   useEffect(() => {
     if (state.error) toast.error(state.error);
@@ -56,25 +57,7 @@ export function LogFormWrapper({ album, tracks }: Props) {
       </div>
 
       {/* Rating */}
-      <div className="space-y-3">
-        <label className="block text-sm font-semibold">
-          Rating
-        </label>
-        <div className="flex items-center gap-4">
-          <input
-            type="range"
-            name="rating"
-            min={1}
-            max={10}
-            value={rating}
-            onChange={(e) => setRating(Number(e.target.value))}
-            className="h-2 flex-1 cursor-pointer appearance-none rounded-full bg-border accent-accent-orange"
-          />
-          <span className="w-12 text-right font-mono text-2xl font-bold text-accent-orange">
-            {rating}
-          </span>
-        </div>
-      </div>
+      <MagneticRatingSlider value={rating} onChange={setRating} />
 
       {/* Trinity */}
       {trackItems.length > 0 && (

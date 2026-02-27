@@ -34,7 +34,17 @@ export function AlbumSearchCard({ item }: { item: SearchResultItem }) {
         <p className="truncate text-sm font-semibold leading-tight">
           {item.title}
         </p>
-        <p className="truncate text-xs text-muted">{item.artistName}</p>
+        {item.artistMbid ? (
+          <Link
+            href={`/artist/${item.artistMbid}`}
+            onClick={(e) => e.stopPropagation()}
+            className="block truncate text-xs text-muted transition-colors hover:text-foreground hover:underline"
+          >
+            {item.artistName}
+          </Link>
+        ) : (
+          <p className="truncate text-xs text-muted">{item.artistName}</p>
+        )}
         {year && (
           <p className="font-mono text-xs text-muted/60">{year}</p>
         )}

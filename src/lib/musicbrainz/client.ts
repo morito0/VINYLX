@@ -3,6 +3,8 @@ import type {
   MBReleaseGroup,
   MBRelease,
   MBReleaseWithRels,
+  MBArtistDetail,
+  MBReleaseGroupBrowse,
   SearchResultItem,
   AlbumDetail,
 } from "./types";
@@ -14,7 +16,10 @@ const RATE_LIMIT_MS = 1100;
 
 let lastRequestTime = 0;
 
-async function rateLimitedFetch(url: string): Promise<Response> {
+async function rateLimitedFetch(
+  url: string,
+  noCache = false
+): Promise<Response> {
   const now = Date.now();
   const wait = RATE_LIMIT_MS - (now - lastRequestTime);
   if (wait > 0) {
@@ -27,7 +32,9 @@ async function rateLimitedFetch(url: string): Promise<Response> {
       "User-Agent": USER_AGENT,
       Accept: "application/json",
     },
-    next: { revalidate: 86400 },
+    ...(noCache
+      ? { cache: "no-store" as const }
+      : { next: { revalidate: 86400 } }),
   });
 }
 
@@ -41,7 +48,8 @@ function coverArtUrl(rgId: string): string {
 
 export async function searchReleaseGroups(
   query: string,
-  limit = 12
+  limit = 12,
+  noCache = false
 ): Promise<SearchResultItem[]> {
   if (!query.trim()) return [];
 
@@ -49,18 +57,23 @@ export async function searchReleaseGroups(
   const url = `${BASE_URL}/release-group/?query=${encodeURIComponent(lucene)}&limit=${limit}&fmt=json`;
 
   try {
-    const res = await rateLimitedFetch(url);
+    const res = await rateLimitedFetch(url, noCache);
     if (!res.ok) return [];
     const data: MBReleaseGroupSearchResult = await res.json();
 
-    return data["release-groups"].map((rg) => ({
-      mbid: rg.id,
-      title: rg.title,
-      artistName: buildArtistName(rg["artist-credit"]),
-      releaseDate: rg["first-release-date"] || null,
-      type: rg["primary-type"] || null,
-      coverUrl: coverArtUrl(rg.id),
-    }));
+    return data["release-groups"]
+      .filter((rg) => rg.id && rg.title)
+      .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+      .map((rg) => ({
+        mbid: rg.id,
+        title: rg.title,
+        artistName: buildArtistName(rg["artist-credit"]),
+        artistMbid: rg["artist-credit"]?.[0]?.artist?.id ?? null,
+        releaseDate: rg["first-release-date"] || null,
+        type: rg["primary-type"] || null,
+        coverUrl: coverArtUrl(rg.id),
+        score: rg.score ?? 0,
+      }));
   } catch (err) {
     console.error("[MusicBrainz] searchReleaseGroups failed:", err);
     return [];
@@ -101,12 +114,141 @@ export async function getReleaseGroupDetail(
       releaseId: officialRelease.id,
       title: rg.title,
       artistName: buildArtistName(rg["artist-credit"]),
+      artistMbid: rg["artist-credit"]?.[0]?.artist?.id ?? null,
       releaseDate: rg["first-release-date"] || null,
       coverUrl: coverArtUrl(rg.id),
       tracks,
     };
   } catch (err) {
     console.error("[MusicBrainz] getReleaseGroupDetail failed for", rgId, ":", err);
+    return null;
+  }
+}
+
+export async function getArtistMbidFromReleaseGroup(
+  rgId: string
+): Promise<string | null> {
+  try {
+    const url = `${BASE_URL}/release-group/${rgId}?inc=artist-credits&fmt=json`;
+    const res = await rateLimitedFetch(url);
+    if (!res.ok) return null;
+    const rg: MBReleaseGroup = await res.json();
+    return rg["artist-credit"]?.[0]?.artist?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function getArtistDetail(
+  artistId: string
+): Promise<MBArtistDetail | null> {
+  try {
+    const url = `${BASE_URL}/artist/${artistId}?inc=aliases+tags&fmt=json`;
+    const res = await rateLimitedFetch(url);
+    if (!res.ok) return null;
+    return (await res.json()) as MBArtistDetail;
+  } catch (err) {
+    console.error("[MusicBrainz] getArtistDetail failed:", err);
+    return null;
+  }
+}
+
+export async function getArtistDiscography(
+  artistId: string,
+  limit = 50
+): Promise<SearchResultItem[]> {
+  try {
+    const url = `${BASE_URL}/release-group?artist=${artistId}&type=album|ep&limit=${limit}&fmt=json`;
+    const res = await rateLimitedFetch(url);
+    if (!res.ok) return [];
+    const data: MBReleaseGroupBrowse = await res.json();
+
+    return data["release-groups"]
+      .filter((rg) => rg.id && rg.title)
+      .sort((a, b) => {
+        const dateA = a["first-release-date"] ?? "";
+        const dateB = b["first-release-date"] ?? "";
+        return dateB.localeCompare(dateA);
+      })
+      .map((rg) => ({
+        mbid: rg.id,
+        title: rg.title,
+        artistName: buildArtistName(rg["artist-credit"]),
+        artistMbid: rg["artist-credit"]?.[0]?.artist?.id ?? null,
+        releaseDate: rg["first-release-date"] || null,
+        type: rg["primary-type"] || rg["secondary-types"]?.[0] || null,
+        coverUrl: coverArtUrl(rg.id),
+        score: rg.score ?? 0,
+      }));
+  } catch (err) {
+    console.error("[MusicBrainz] getArtistDiscography failed:", err);
+    return [];
+  }
+}
+
+// ── Lightweight lookup (single release-group by mbid) ────────────────────
+
+export async function lookupReleaseGroupBasic(mbid: string): Promise<{
+  mbid: string;
+  title: string;
+  artistName: string;
+  artistMbid: string | null;
+  releaseDate: string | null;
+  type: string | null;
+} | null> {
+  try {
+    const url = `${BASE_URL}/release-group/${mbid}?inc=artist-credits&fmt=json`;
+    const res = await rateLimitedFetch(url);
+    if (!res.ok) return null;
+    const rg: MBReleaseGroup = await res.json();
+    return {
+      mbid: rg.id,
+      title: rg.title,
+      artistName: buildArtistName(rg["artist-credit"]),
+      artistMbid: rg["artist-credit"]?.[0]?.artist?.id ?? null,
+      releaseDate: rg["first-release-date"] || null,
+      type: rg["primary-type"] || null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ── Targeted Lucene search (artist + title exact match) ──────────────────
+
+export async function searchReleaseGroupTargeted(
+  artist: string,
+  title: string
+): Promise<{
+  mbid: string;
+  title: string;
+  artistName: string;
+  artistMbid: string | null;
+  releaseDate: string | null;
+  type: string | null;
+} | null> {
+  try {
+    const safeArtist = artist.replace(/["\\]/g, "\\$&");
+    const safeTitle = title.replace(/["\\]/g, "\\$&");
+    const lucene = `artist:"${safeArtist}" AND releasegroup:"${safeTitle}"`;
+    const url = `${BASE_URL}/release-group/?query=${encodeURIComponent(lucene)}&limit=1&fmt=json`;
+
+    const res = await rateLimitedFetch(url, true);
+    if (!res.ok) return null;
+
+    const data: MBReleaseGroupSearchResult = await res.json();
+    const rg = data["release-groups"]?.[0];
+    if (!rg) return null;
+
+    return {
+      mbid: rg.id,
+      title: rg.title,
+      artistName: buildArtistName(rg["artist-credit"]),
+      artistMbid: rg["artist-credit"]?.[0]?.artist?.id ?? null,
+      releaseDate: rg["first-release-date"] || null,
+      type: rg["primary-type"] || null,
+    };
+  } catch {
     return null;
   }
 }

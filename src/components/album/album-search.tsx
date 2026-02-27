@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useCallback, useRef, useEffect } from "react";
 import { Search } from "lucide-react";
-import { searchAlbumsFromMusicBrainz } from "@/lib/actions/musicbrainz";
+import { searchAlbums } from "@/lib/actions/search";
 import { AlbumSearchCard } from "./album-search-card";
 import type { SearchResultItem } from "@/lib/musicbrainz/types";
 
@@ -23,7 +23,7 @@ export function AlbumSearch() {
         return;
       }
       startTransition(async () => {
-        const data = await searchAlbumsFromMusicBrainz(value);
+        const data = await searchAlbums(value);
         setResults(data);
         setHasSearched(true);
       });
